@@ -6,8 +6,18 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 
 def download_excel(download_path, secret):
-    options = Options()
+
+    # Retrieve username and password from environment variables
+    username = os.environ.get('LIVEIQ_USERNAME')
+    password = os.environ.get('LIVEIQ_PASSWORD')
+
+    options = Options() # Configure Chrome options for the webdriver
+
+    # Uncomment the line below to run Chrome in headless mode
     # options.add_argument("--headless")
+
+
+    # Set preferences for Chrome, including the default download directory
     options.add_experimental_option("prefs", {
         "download.default_directory": download_path,
         "download.prompt_for_download": False,
@@ -15,18 +25,22 @@ def download_excel(download_path, secret):
         "safebrowsing.enabled": True
     })
 
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(options=options) # Initialize the Chrome webdriver with the specified options
 
     # Navigate to the login page
     driver.get("https://liveiq.subway.com/")
 
-    # Wait for the login elements to load and then log in
+    # Wait until the username input field is present, then enter the username
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "signInName")))
     driver.find_element(By.ID, "signInName").send_keys(secret['username'])
+
+    # Enter the password in the password input field
     driver.find_element(By.ID, "password").send_keys(secret['password'])
+
+    # Click the login button
     driver.find_element(By.ID, "next").click()
 
-    # Wait for the page to load after login
+    # Wait until the page loads after login, indicated by the presence of an element with ID 'page-title'
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "page-title")))
 
     # Navigate to the Employee Export page
@@ -46,12 +60,12 @@ def download_excel(download_path, secret):
     # Wait for the download to complete
     time.sleep(10)  # Adjust this time based on your network speed and file size
 
+    # Close the browser
     driver.quit()
 
-# Example usage
 secret = {
-    "username": "RidgebaseDONOTDELETE",
-    "password": "Ridgebase2022"
+    "username": username,
+    "password": password
 }
 download_path = "/path/to/download"
 download_excel(download_path, secret)
