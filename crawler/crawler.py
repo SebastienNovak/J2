@@ -7,7 +7,7 @@ import time
 
 def download_excel(download_path, secret):
     options = Options()
-    options.add_argument("--headless")
+    # options.add_argument("--headless")
     options.add_experimental_option("prefs", {
         "download.default_directory": download_path,
         "download.prompt_for_download": False,
@@ -50,8 +50,8 @@ def download_excel(download_path, secret):
 
 # Example usage
 secret = {
-    "username": "your_username",
-    "password": "your_password"
+    "username": "RidgebaseDONOTDELETE",
+    "password": "Ridgebase2022"
 }
 download_path = "/path/to/download"
 download_excel(download_path, secret)
