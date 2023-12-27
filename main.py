@@ -17,25 +17,25 @@ Run the script in a Python environment where all dependencies have been installe
 $ python main.py
 """
 
-
-from crawler.crawler import download_excel # Import the download_excel function from the crawler module
+import logging # Import the logging module
+import os # Import the os module
+# from crawler.crawler import download_excel # Import the download_excel function from the crawler module
 from processor.processor import process_excel # Import the process_excel function from the processor module
 from airtable import upload_to_airtable # Import the upload_to_airtable function from the airtable_module within the airtable package
 from aws.s3 import upload_file_to_s3 # Import the upload_file_to_s3 function from the s3 module within the aws package
 from secrets import get_secret # Import the get_secret function from the secrets_manager module within the secrets package
-import logging # Import the logging module
-import os # Import the os module
+
 
 def setup_logging():
     # Create a logger
-    logger = logging.getLogger('my_app')
+    logger = logging.getLogger('test_logger')
     logger.setLevel(logging.DEBUG)  # Set the logging level
 
-    # Create a file handler that logs even debug messages
-    fh = logging.FileHandler('my_app.log')
+    # Create a file handler that logs debug messages
+    fh = logging.FileHandler('test.log')
     fh.setLevel(logging.DEBUG)
 
-    # Create a console handler with a higher log level
+    # Create a console handler that also logs debug messages
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
 
@@ -52,6 +52,7 @@ def main(): # Define the main function that will be executed
     setup_logging()
     logger = logging.getLogger('my_app')
 
+    logger.debug("Starting main function V2")
     try:
         logger.debug("Starting main function")
 
@@ -81,7 +82,7 @@ def main(): # Define the main function that will be executed
         logger.debug("Main function completed successfully")
 
     except Exception as e:
-        logger.error(f"An error occurred: {e}")
+        logger.exception("An error occurred")
 
 if __name__ == "__main__":
     main()
