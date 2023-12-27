@@ -21,6 +21,7 @@ def get_latest_file(download_path, file_extension):
 def download_excel(download_path, secret):
     logger = logging.getLogger(__name__)
     logger.debug("Starting the download process.")
+    downloaded_file_path = None
 
     options = Options()  # Configure Chrome options for the webdriver
     # Uncomment the line below to run Chrome in headless mode
