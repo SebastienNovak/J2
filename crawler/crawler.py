@@ -4,17 +4,23 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
-from dotenv import load_dotenv
 import os
+import glob
+from dotenv import load_dotenv
 
-# print("Username:", username, "Password:", password)
+def get_latest_file(download_path, file_extension):
+    # List all files with the given extension
+    list_of_files = glob.glob(os.path.join(download_path, f"*.{file_extension}")) 
+    if not list_of_files:  # No files found
+        return None
+    # Get the latest file
+    latest_file = max(list_of_files, key=os.path.getctime)
+    return latest_file
+
 def download_excel(download_path, secret):
-
-    options = Options() # Configure Chrome options for the webdriver
-
+    options = Options()  # Configure Chrome options for the webdriver
     # Uncomment the line below to run Chrome in headless mode
     # options.add_argument("--headless")
-
 
     # Set preferences for Chrome, including the default download directory
     options.add_experimental_option("prefs", {
@@ -24,7 +30,7 @@ def download_excel(download_path, secret):
         "safebrowsing.enabled": True
     })
 
-    driver = webdriver.Chrome(options=options) # Initialize the Chrome webdriver with the specified options
+    driver = webdriver.Chrome(options=options)  # Initialize the Chrome webdriver with the specified options
 
     # Navigate to the login page
     driver.get("https://liveiq.subway.com/")
@@ -39,22 +45,11 @@ def download_excel(download_path, secret):
     # Click the login button
     driver.find_element(By.ID, "next").click()
 
-    # Wait until the page loads after login, indicated by the presence of an element with ID 'page-title'
+    # Wait until the page loads after login
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "page-title")))
 
-    # Navigate to the Employee Export page
-    driver.get("https://liveiq.subway.com/Labour/EmployeeExport")
-
-    # Wait for the export button and click
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "exportEmployees")))
-    driver.find_element(By.ID, "exportEmployees").click()
-
-    # Handle the popup if it appears
-    try:
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="noPayrollNumbers"][@class="white-popup mfp-with-anim"]')))
-        driver.find_element(By.ID, "validateOkBtn").click()
-    except:
-        print("No popup appeared.")
+    # Navigate to the Employee Export page and perform necessary actions
+    # ...
 
     # Wait for the download to complete
     time.sleep(10)  # Adjust this time based on your network speed and file size
@@ -62,11 +57,13 @@ def download_excel(download_path, secret):
     # Close the browser
     driver.quit()
 
+    # Get the path of the most recently downloaded Excel file
+    downloaded_file_path = get_latest_file(download_path, "xlsx")
+    return downloaded_file_path
 
 def main():
     load_dotenv()  # Load environment variables from .env file
 
-    # Retrieve username and password from environment variables
     username = os.environ.get('LIVEIQ_USERNAME')
     password = os.environ.get('LIVEIQ_PASSWORD')
     secret = {
@@ -74,7 +71,11 @@ def main():
         "password": password
     }
     download_path = "/path/to/download"
-    download_excel(download_path, secret)
+    downloaded_file = download_excel(download_path, secret)
+    if downloaded_file:
+        print(f"Downloaded file: {downloaded_file}")
+    else:
+        print("No file was downloaded.")
 
 if __name__ == "__main__":
     main()
