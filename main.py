@@ -65,12 +65,12 @@ def main(): # Define the main function that will be executed
         logger.debug(f"Downloading Excel file to {download_path}")
         excel_file = download_excel(download_path, liveiq_secret) # Call the download_excel function to download the Excel file using the LiveIQ credentials
 
-        logger.debug("Processing Excel file")
-        processed_data = process_excel(excel_file) # Process the downloaded Excel file and store the processed data
         if excel_file is None:
-            logger.error("Failed to download the Excel file.")
+            logger.error("Failed to download the Excel file or no file was downloaded.")
             return
         
+        logger.debug("Processing Excel file")
+        processed_data = process_excel(excel_file) # Process the downloaded Excel file and store the processed data
 
         # Define the API key, base ID, and table name for Airtable
         airtable_api_key = os.getenv('AIRTABLE_API_KEY')

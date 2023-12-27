@@ -6,6 +6,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 import os
 import glob
+import logging
 from dotenv import load_dotenv
 
 def get_latest_file(download_path, file_extension):
@@ -18,6 +19,9 @@ def get_latest_file(download_path, file_extension):
     return latest_file
 
 def download_excel(download_path, secret):
+    logger = logging.getLogger(__name__)
+    logger.debug("Starting the download process.")
+
     options = Options()  # Configure Chrome options for the webdriver
     # Uncomment the line below to run Chrome in headless mode
     # options.add_argument("--headless")
@@ -30,35 +34,60 @@ def download_excel(download_path, secret):
         "safebrowsing.enabled": True
     })
 
+    logger.debug("WebDriver initialized.")
     driver = webdriver.Chrome(options=options)  # Initialize the Chrome webdriver with the specified options
+    try:
+        # Navigate to the login page
+        driver.get("https://liveiq.subway.com/")
+        logger.debug("Navigated to the login page.")
 
-    # Navigate to the login page
-    driver.get("https://liveiq.subway.com/")
+        # Wait until the username input field is present, then enter the username
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "signInName")))
+        driver.find_element(By.ID, "signInName").send_keys(secret['username'])
 
-    # Wait until the username input field is present, then enter the username
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "signInName")))
-    driver.find_element(By.ID, "signInName").send_keys(secret['username'])
+        # Enter the password in the password input field
+        driver.find_element(By.ID, "password").send_keys(secret['password'])
 
-    # Enter the password in the password input field
-    driver.find_element(By.ID, "password").send_keys(secret['password'])
+        # Click the login button
+        driver.find_element(By.ID, "next").click()
 
-    # Click the login button
-    driver.find_element(By.ID, "next").click()
+        # Wait until the page loads after login
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "page-title")))
+        logger.debug("Logged in successfully. Navigating to the download page.")
 
-    # Wait until the page loads after login
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "page-title")))
+        # Navigate to the Employee Export page and perform necessary actions
+        driver.get("https://liveiq.subway.com/Labour/EmployeeExport")
 
-    # Navigate to the Employee Export page and perform necessary actions
-    # ...
+        # Wait for the export button and click
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "exportEmployees")))
+        driver.find_element(By.ID, "exportEmployees").click()
 
-    # Wait for the download to complete
-    time.sleep(10)  # Adjust this time based on your network speed and file size
+        # Handle the popup if it appears
+        try:
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="noPayrollNumbers"][@class="white-popup mfp-with-anim"]')))
+            driver.find_element(By.ID, "validateOkBtn").click()
+        except:
+            print("No popup appeared.")
 
+        # Wait for the download to complete
+        logger.debug("Waiting for the file to download.")
+        time.sleep(10)  # Adjust this time based on your network speed and file size
+
+        downloaded_file_path = get_latest_file(download_path, "xlsx")
+
+        if downloaded_file_path:
+            logger.debug(f"Downloaded file found: {downloaded_file_path}")
+        else:
+            logger.warning("No file was downloaded.")
+
+    except Exception as e:
+        logger.exception("An error occurred during the download process.")
+
+    finally:
     # Close the browser
-    driver.quit()
+        driver.quit()
+        logger.debug("WebDriver closed.")
 
-    # Get the path of the most recently downloaded Excel file
-    downloaded_file_path = get_latest_file(download_path, "xlsx")
     return downloaded_file_path
 
 def main():
