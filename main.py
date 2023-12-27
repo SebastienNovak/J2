@@ -26,40 +26,62 @@ from secrets import get_secret # Import the get_secret function from the secrets
 import logging # Import the logging module
 import os # Import the os module
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', filename='app.log')
+def setup_logging():
+    # Create a logger
+    logger = logging.getLogger('my_app')
+    logger.setLevel(logging.DEBUG)  # Set the logging level
+
+    # Create a file handler that logs even debug messages
+    fh = logging.FileHandler('my_app.log')
+    fh.setLevel(logging.DEBUG)
+
+    # Create a console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR)
+
+    # Create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+
+    # Add the handlers to the logger
+    logger.addHandler(fh)
+    logger.addHandler(ch)
 
 def main(): # Define the main function that will be executed
+    setup_logging()
+    logger = logging.getLogger('my_app')
+
     try:
-        logging.debug("Starting main function")
+        logger.debug("Starting main function")
 
         region_name = os.getenv('AWS_REGION', 'ca-central-1') # Define the AWS region name for the Secrets Manager
         liveiq_secret_name = os.getenv('LIVEIQ_SECRET_NAME', 'liveiq')
         liveiq_secret = get_secret('liveiq', region_name) # Retrieve the LiveIQ secret (username and password) from AWS Secrets Manager
-        logging.debug("Retrieved LiveIQ secret")
+        logger.debug("Retrieved LiveIQ secret")
         
         download_path = "/path/to/download" # Define the path where the downloaded Excel file will be stored
-        logging.debug(f"Downloading Excel file to {download_path}")
+        logger.debug(f"Downloading Excel file to {download_path}")
         excel_file = download_excel(download_path, liveiq_secret) # Call the download_excel function to download the Excel file using the LiveIQ credentials
 
-        logging.debug("Processing Excel file")
+        logger.debug("Processing Excel file")
         processed_data = process_excel(excel_file) # Process the downloaded Excel file and store the processed data
 
         # Define the API key, base ID, and table name for Airtable
         airtable_api_key = os.getenv('AIRTABLE_API_KEY')
         airtable_base_id = os.getenv('AIRTABLE_BASE_ID')
         airtable_table_name = os.getenv('AIRTABLE_TABLE_NAME')
-        logging.debug("Uploading data to Airtable")
+        logger.debug("Uploading data to Airtable")
         upload_to_airtable(airtable_api_key, airtable_base_id, airtable_table_name, processed_data) # Upload the processed data to Airtable
 
         s3_bucket = os.getenv('S3_BUCKET_NAME') # Define the S3 bucket name where the file will be uploaded
-        logging.debug(f"Uploading Excel file to S3 bucket: {s3_bucket}")
+        logger.debug(f"Uploading Excel file to S3 bucket: {s3_bucket}")
         upload_file_to_s3(excel_file, s3_bucket)  # Upload the Excel file to the specified S3 bucket
     
-        logging.debug("Main function completed successfully")
+        logger.debug("Main function completed successfully")
 
     except Exception as e:
-        logging.error(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     main()
