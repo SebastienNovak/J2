@@ -21,7 +21,7 @@ import logging # Import the logging module
 import os # Import the os module
 from crawler.crawler import download_excel # Import the download_excel function from the crawler module
 from processor.processor import process_excel # Import the process_excel function from the processor module
-from airtable import upload_to_airtable # Import the upload_to_airtable function from the airtable_module within the airtable package
+from airtable_module.airtable import upload_to_airtable # Import the upload_to_airtable function from the airtable_module within the airtable package
 from aws.s3 import upload_file_to_s3 # Import the upload_file_to_s3 function from the s3 module within the aws package
 from secrets import get_secret # Import the get_secret function from the secrets_manager module within the secrets package
 
