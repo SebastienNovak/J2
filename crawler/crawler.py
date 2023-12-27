@@ -7,11 +7,6 @@ import time
 from dotenv import load_dotenv
 import os
 
-load_dotenv() # Load environment variables from .env file
-
-# Retrieve username and password from environment variables
-username = os.environ.get('LIVEIQ_USERNAME')
-password = os.environ.get('LIVEIQ_PASSWORD')
 # print("Username:", username, "Password:", password)
 def download_excel(download_path, secret):
 
@@ -67,9 +62,19 @@ def download_excel(download_path, secret):
     # Close the browser
     driver.quit()
 
-secret = {
-    "username": username,
-    "password": password
-}
-download_path = "/path/to/download"
-download_excel(download_path, secret)
+
+def main():
+    load_dotenv()  # Load environment variables from .env file
+
+    # Retrieve username and password from environment variables
+    username = os.environ.get('LIVEIQ_USERNAME')
+    password = os.environ.get('LIVEIQ_PASSWORD')
+    secret = {
+        "username": username,
+        "password": password
+    }
+    download_path = "/path/to/download"
+    download_excel(download_path, secret)
+
+if __name__ == "__main__":
+    main()
