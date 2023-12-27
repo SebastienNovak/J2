@@ -37,7 +37,7 @@ def setup_logging():
 
     # Create a console handler with a higher log level
     ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
+    ch.setLevel(logging.DEBUG)
 
     # Create formatter and add it to the handlers
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
