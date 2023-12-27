@@ -1,75 +1,65 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import time
-from dotenv import load_dotenv
-import os
+"""
+Main Script for LiveIQ Data Processing and Uploading
 
-load_dotenv() # Load environment variables from .env file
+This script automates the process of downloading an Excel file from LiveIQ,
+processing the data, and then uploading the processed data to Airtable and AWS S3.
 
-# Retrieve username and password from environment variables
-username = os.environ.get('LIVEIQ_USERNAME')
-password = os.environ.get('LIVEIQ_PASSWORD')
-# print("Username:", username, "Password:", password)
-def download_excel(download_path, secret):
+The script uses AWS Secrets Manager to securely retrieve credentials for LiveIQ,
+and environment variables for configuration settings for Airtable and AWS S3.
 
-    options = Options() # Configure Chrome options for the webdriver
+Requirements:
+- AWS CLI configured with access to the required AWS Secrets Manager secret.
+- Environment variables set for Airtable API key, base ID, table name, and S3 bucket name.
+- Python packages: boto3, pandas, selenium, airtable-python-wrapper, python-dotenv.
 
-    # Uncomment the line below to run Chrome in headless mode
-    # options.add_argument("--headless")
+Usage:
+Run the script in a Python environment where all dependencies have been installed:
+$ python main.py
+"""
 
 
-    # Set preferences for Chrome, including the default download directory
-    options.add_experimental_option("prefs", {
-        "download.default_directory": download_path,
-        "download.prompt_for_download": False,
-        "download.directory_upgrade": True,
-        "safebrowsing.enabled": True
-    })
+from crawler.crawler import download_excel # Import the download_excel function from the crawler module
+from processor.processor import process_excel # Import the process_excel function from the processor module
+from airtable import upload_to_airtable # Import the upload_to_airtable function from the airtable_module within the airtable package
+from aws.s3 import upload_file_to_s3 # Import the upload_file_to_s3 function from the s3 module within the aws package
+from secrets import get_secret # Import the get_secret function from the secrets_manager module within the secrets package
+import logging # Import the logging module
+import os # Import the os module
 
-    driver = webdriver.Chrome(options=options) # Initialize the Chrome webdriver with the specified options
+# Configure logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', filename='app.log')
 
-    # Navigate to the login page
-    driver.get("https://liveiq.subway.com/")
-
-    # Wait until the username input field is present, then enter the username
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "signInName")))
-    driver.find_element(By.ID, "signInName").send_keys(secret['username'])
-
-    # Enter the password in the password input field
-    driver.find_element(By.ID, "password").send_keys(secret['password'])
-
-    # Click the login button
-    driver.find_element(By.ID, "next").click()
-
-    # Wait until the page loads after login, indicated by the presence of an element with ID 'page-title'
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "page-title")))
-
-    # Navigate to the Employee Export page
-    driver.get("https://liveiq.subway.com/Labour/EmployeeExport")
-
-    # Wait for the export button and click
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "exportEmployees")))
-    driver.find_element(By.ID, "exportEmployees").click()
-
-    # Handle the popup if it appears
+def main(): # Define the main function that will be executed
     try:
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="noPayrollNumbers"][@class="white-popup mfp-with-anim"]')))
-        driver.find_element(By.ID, "validateOkBtn").click()
-    except:
-        print("No popup appeared.")
+        logging.debug("Starting main function")
 
-    # Wait for the download to complete
-    time.sleep(10)  # Adjust this time based on your network speed and file size
+        region_name = os.getenv('AWS_REGION', 'ca-central-1') # Define the AWS region name for the Secrets Manager
+        liveiq_secret_name = os.getenv('LIVEIQ_SECRET_NAME', 'liveiq')
+        liveiq_secret = get_secret('liveiq', region_name) # Retrieve the LiveIQ secret (username and password) from AWS Secrets Manager
+        logging.debug("Retrieved LiveIQ secret")
+        
+        download_path = "/path/to/download" # Define the path where the downloaded Excel file will be stored
+        logging.debug(f"Downloading Excel file to {download_path}")
+        excel_file = download_excel(download_path, liveiq_secret) # Call the download_excel function to download the Excel file using the LiveIQ credentials
 
-    # Close the browser
-    driver.quit()
+        logging.debug("Processing Excel file")
+        processed_data = process_excel(excel_file) # Process the downloaded Excel file and store the processed data
 
-secret = {
-    "username": username,
-    "password": password
-}
-download_path = "/path/to/download"
-download_excel(download_path, secret)
+        # Define the API key, base ID, and table name for Airtable
+        airtable_api_key = os.getenv('AIRTABLE_API_KEY')
+        airtable_base_id = os.getenv('AIRTABLE_BASE_ID')
+        airtable_table_name = os.getenv('AIRTABLE_TABLE_NAME')
+        logging.debug("Uploading data to Airtable")
+        upload_to_airtable(airtable_api_key, airtable_base_id, airtable_table_name, processed_data) # Upload the processed data to Airtable
+
+        s3_bucket = os.getenv('S3_BUCKET_NAME') # Define the S3 bucket name where the file will be uploaded
+        logging.debug(f"Uploading Excel file to S3 bucket: {s3_bucket}")
+        upload_file_to_s3(excel_file, s3_bucket)  # Upload the Excel file to the specified S3 bucket
+    
+        logging.debug("Main function completed successfully")
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    main()
