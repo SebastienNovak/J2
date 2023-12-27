@@ -13,7 +13,11 @@ def upload_to_airtable(api_key, base_id, table_name, data):
     # and 'to_dict('records')' converts it into a list of dictionaries where each dictionary
     # represents a row in the DataFrame
     for record in data.to_dict('records'):
+        try:
+            # Insert each record into the Airtable table. The 'insert' method adds a new row to the table
+            # with the data from the record dictionary
+            airtable.insert(record)
+            
+        except Exception as e:
+            print(f"Error uploading record {record}: {e}")
 
-        # Insert each record into the Airtable table. The 'insert' method adds a new row to the table
-        # with the data from the record dictionary
-        airtable.insert(record)
