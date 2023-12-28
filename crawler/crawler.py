@@ -7,6 +7,7 @@ import time
 import os
 import glob
 import logging
+import tempfile
 from dotenv import load_dotenv
 
 def get_latest_file(download_path, file_extension):
@@ -100,7 +101,7 @@ def main():
         "username": username,
         "password": password
     }
-    download_path = "/path/to/download"
+    download_path = tempfile.mkdtemp()
     downloaded_file = download_excel(download_path, secret)
     if downloaded_file:
         print(f"Downloaded file: {downloaded_file}")
